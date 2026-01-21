@@ -1,0 +1,57 @@
+<script>
+    let participants = [];
+
+    // Load your JSON file
+    fetch('participants.json')
+        .then(response => response.json())
+        .then(data => { 
+            participants = data; 
+            console.log("JSON loaded: " + participants.length + " rows.");
+        })
+        .catch(err => alert("Error: JSON file not found or formatting error."));
+
+    function onScanSuccess(decodedText) {
+        // --- DIAGNOSTIC ALERT ---
+        // This will pop up on your phone and show exactly what is in the QR code
+        alert("QR Scanned Raw Data: [" + decodedText + "]");
+
+        // Remove asterisks if your QR code generator added them (common for barcodes)
+        const cleanID = decodedText.replace(/\*/g, "").trim();
+
+        // Find person - checking both numeric ID and Barcode string
+        const person = participants.find(p => 
+            p.ID.toString() === cleanID || 
+            p.Barcode.replace(/\*/g, "") === cleanID
+        );
+
+        if (person) {
+            const resultBox = document.getElementById('result-box');
+            const displayDiv = document.getElementById('display-full');
+            
+            // Format for display
+            const fullName = `${person["Combined (A+B+C)"]} ${person["__1"]}`;
+            
+            resultBox.style.display = 'block';
+            displayDiv.innerText = fullName;
+
+            addToHistory(fullName);
+            if (navigator.vibrate) navigator.vibrate(100);
+        } else {
+            // This alert shows if the scanner works but can't find the person in your list
+            alert("Scanner read: " + cleanID + " but no matching ID found in participants.json");
+        }
+    }
+
+    function addToHistory(text) {
+        const list = document.getElementById('history-list');
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        item.innerHTML = `<strong>${time}</strong> - ${text}`;
+        list.prepend(item); 
+        if (list.children.length > 5) list.lastChild.remove();
+    }
+
+    const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 15, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
+</script>
