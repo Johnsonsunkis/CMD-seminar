@@ -30,31 +30,29 @@
         .then(data => { participants = data; })
         .catch(err => console.error("Data load error"));
 
-    function onScanSuccess(decodedText) {
-        // 1. Clean the scan (remove asterisks from Barcode)
+   function onScanSuccess(decodedText) {
+        // --- THIS ALERT WILL TELL US THE TRUTH ---
+        alert("SCAN SUCCESS!\nRaw Data: " + decodedText);
+
         const cleanID = decodedText.replace(/\*/g, "").trim();
 
-        // 2. Find the person
         const person = participants.find(p => 
             p.ID.toString() === cleanID || 
-            p.Barcode.replace(/\*/g, "") === cleanID
+            p.Barcode.replace(/\*/g, "") === cleanID ||
+            p["Combined (A+B+C)"].includes(cleanID)
         );
 
         if (person) {
-            const resultBox = document.getElementById('result-box');
             const displayDiv = document.getElementById('display-full');
-
-            // 3. YOUR REQUESTED DISPLAY: "1 Yung Ting Kit 先生 HKPC"
-            // We take "Combined (A+B+C)", remove the "|" bars, and add "__1"
-            const combinedStr = person["Combined (A+B+C)"].replace(/\|/g, "").replace(/\s+/g, " ");
-            const organization = person["__1"] || "";
+            const nameInfo = person["Combined (A+B+C)"].replace(/\|/g, "").replace(/\s+/g, " ");
+            const orgInfo = person["__1"] || "";
             
-            const finalDisplay = combinedStr + " " + organization;
-
-            resultBox.style.display = 'block';
-            displayDiv.innerText = finalDisplay;
+            document.getElementById('result-box').style.display = 'block';
+            displayDiv.innerText = nameInfo + " " + orgInfo;
             
             if (navigator.vibrate) navigator.vibrate(100);
+        } else {
+            alert("MATCH FAILED\nSearched for: " + cleanID + "\nCheck if this ID exists in your JSON!");
         }
     }
 
