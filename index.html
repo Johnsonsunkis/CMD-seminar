@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seminar Check-in</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; padding: 15px; text-align: center; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #reader { width: 100%; border-radius: 10px; margin-bottom: 20px; background: #000; }
+        #result-box { display: none; margin-top: 20px; padding: 20px; background-color: #e7f3ff; border: 2px solid #3182ce; border-radius: 10px; }
+        .display-text { font-size: 20px; font-weight: bold; color: #2d3748; }
+        #status { color: #718096; font-size: 12px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Seminar Scanner</h2>
+    <div id="status">Initializing...</div>
+    <div id="reader"></div>
+
+    <div id="result-box">
+        <div style="color: #3182ce; font-weight: bold;">✅ CHECK-IN SUCCESS</div>
+        <div id="display-full" class="display-text"></div>
+    </div>
+    
+    <div id="history" style="text-align:left; margin-top:20px; font-size:14px; border-top:1px solid #eee; padding-top:10px;">
+        <strong>Recent:</strong>
+        <div id="history-list"></div>
+    </div>
+</div>
+
+<script>
+    let participants = [];
+    const statusDiv = document.getElementById('status');
+
+    // 1. Load Data
+    fetch('participants_2.json')
+        .then(response => {
+            if (!response.ok) throw new Error('File not found');
+            return response.json();
+        })
+        .then(data => {
+            participants = data;
+            statusDiv.innerText = "System Ready - " + data.length + " entries loaded";
+        })
+        .catch(err => {
+            statusDiv.innerText = "Error: participants_2.json not found!";
+            console.error(err);
+        });
+
+    function onScanSuccess(decodedText) {
+        // Remove asterisks and spaces
+        const cleanID = decodedText.replace(/\*/g, "").trim();
+        
+        // Find person
+        const person = participants.find(p => 
+            p.ID.toString() === cleanID || 
+            p.Barcode.replace(/\*/g, "") === cleanID ||
+            p["Combined (A+B+C)"].includes(cleanID)
+        );
+
+        if (person) {
+            const resultBox = document.getElementById('result-box');
+            const displayDiv = document.getElementById('display-full');
+            
+            // Format: "1 Yung Ting Kit 先生 HKPC"
+            // We take 'Combined (A+B+C)' but remove the "|" characters
+            const baseInfo = person["Combined (A+B+C)"].replace(/\|/g, "").replace(/\s+/g, " ");
+            const organization = person["__1"] || "";
+            const fullName = baseInfo + " " + organization;
+            
+            resultBox.style.display = 'block';
+            displayDiv.innerText = fullName;
+
+            // Add to history
+            const item = document.createElement('div');
+            item.innerText = fullName;
+            document.getElementById('history-list').prepend(item);
+            
+            if
