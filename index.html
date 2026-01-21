@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seminar Barcode Scanner</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { 
+            font-family: "Microsoft JhengHei", sans-serif; 
+            text-align: center; 
+            background-color: #f4f7f6; 
+            margin: 0; 
+            padding: 20px; 
+        }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; font-size: 24px; }
+        #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+        #result-display { 
+            display: none; 
+            padding: 20px; 
+            border: 2px solid #27ae60; 
+            border-radius: 10px; 
+            background-color: #ecfdf5; 
+            animation: fadeIn 0.5s;
+        }
+        .name-text { font-size: 28px; font-weight: bold; color: #16a085; margin: 10px 0; }
+        .id-text { color: #7f8c8d; font-size: 18px; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Seminar Check-in Scanner</h1>
+    
+    <div id="reader"></div>
+
+    <div id="result-display" id="result-display">
+        <div class="id-text">ID: <span id="display-id"></span></div>
+        <div class="name-text" id="display-name"></div>
+        <div id="display-info" style="color: #2c3e50;"></div>
+    </div>
+</div>
+
+<script>
+    let participants = [];
+
+    // 1. Fetch the data from your JSON file
+    fetch('participants.json')
+        .then(response => response.json())
+        .then(data => {
+            participants = data;
+            console.log("Data Loaded");
+        })
+        .catch(err => alert("Error loading participants.json. Make sure it is in the same folder."));
+
+    // 2. Logic when a barcode is successfully scanned
+    function onScanSuccess(decodedText, decodedResult) {
+        // Find the person matching the barcode ID
+        const person = participants.find(p => p.id === decodedText);
+
+        if (person) {
+            document.getElementById('result-display').style.display = 'block';
+            document.getElementById('display-id').innerText = person.id;
+            document.getElementById('display-name').innerText = person.name;
+            document.getElementById('display-info').innerText = person.info;
+            
+            // Optional: Phone vibrates on success
+            if (navigator.vibrate) navigator.vibrate(100);
+        } else {
+            console.log("ID not found: " + decodedText);
+        }
+    }
+
+    // 3. Start the Scanner (Optimized for Barcodes)
+    const html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", 
+        { 
+            fps: 15, 
+            qrbox: { width: 450, height: 150 } // Wide rectangle for barcodes
+        }
+    );
+    html5QrcodeScanner.render(onScanSuccess);
+</script>
+
+</body>
+</html>
